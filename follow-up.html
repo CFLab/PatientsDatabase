@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Follow-up - CF Patient Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo" style="background:none;"><img src="images/cf-logo.png" alt="CF" class="logo-3d" style="width:48px;height:48px;"></div>
+                <span class="sidebar-brand">CF Patient System</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item"><a href="dashboard.html" class="nav-link"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a></div>
+                <div class="nav-item"><a href="add-patient.html" class="nav-link"><i class="bi bi-person-plus"></i><span>Add New Patient</span></a></div>
+                <div class="nav-item"><a href="follow-up.html" class="nav-link active"><i class="bi bi-clipboard2-pulse"></i><span>Patient Follow-up</span></a></div>
+                <div class="nav-item"><a href="edit-patient.html" class="nav-link"><i class="bi bi-pencil-square"></i><span>Edit Patient</span></a></div>
+                <div class="nav-item" style="margin-top: auto;"><a href="#" class="nav-link" onclick="logout(); return false;"><i class="bi bi-box-arrow-left"></i><span>Logout</span></a></div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle" onclick="toggleSidebarCollapse()">
+                    <i class="bi bi-chevron-left" id="toggleIcon"></i><span>Collapse</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="navbar-left">
+                    <button class="mobile-menu-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                    <h1 class="navbar-title">Patient Follow-up</h1>
+                </div>
+                <div class="navbar-right">
+                    <div class="user-info">
+                        <div class="user-name" id="displayName">Administrator</div>
+                        <div class="user-role">Indus Hospital</div>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <button class="btn-logout" onclick="logout()"><i class="bi bi-box-arrow-right"></i><span>Logout</span></button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <a href="dashboard.html" class="back-link"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <div class="form-header-icon" style="background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);">
+                            <i class="bi bi-clipboard2-pulse"></i>
+                        </div>
+                        <h2>Existing Patient Follow-up</h2>
+                    </div>
+
+                    <div class="form-body">
+                        <!-- Search -->
+                        <div class="search-section">
+                            <label for="patientSearch" class="form-label required">Search Patient</label>
+                            <div class="search-input-group">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="patientSearch" placeholder="Type MR Number or Patient Name...">
+                            </div>
+                            <div class="search-results" id="searchResults" style="display: none;"></div>
+                        </div>
+
+                        <!-- Patient Info (Read Only) -->
+                        <div id="patientInfoSection" style="display: none;">
+                            <h5 class="section-title"><i class="bi bi-person-badge"></i> Patient Information</h5>
+                            <div class="patient-info-grid" id="patientInfoGrid"></div>
+
+                            <!-- Follow-up Form -->
+                            <form id="followUpForm">
+                                <h5 class="section-title mt-4"><i class="bi bi-rulers"></i> Update Measurements</h5>
+                                <div class="row g-4">
+                                    <div class="col-md-4">
+                                        <label for="heightCm" class="form-label required">Height (cm)</label>
+                                        <input type="number" class="form-control" id="heightCm" step="0.1" min="0" max="300" required>
+                                        <div class="invalid-feedback" id="heightCmError"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="weightKg" class="form-label required">Weight (kg)</label>
+                                        <input type="number" class="form-control" id="weightKg" step="0.1" min="0" max="500" required>
+                                        <div class="invalid-feedback" id="weightKgError"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">BMI</label>
+                                        <div class="bmi-display" id="bmiDisplay"><i class="bi bi-activity"></i><span class="bmi-value">--</span><span class="bmi-category"></span></div>
+                                    </div>
+                                </div>
+
+                                <div id="nextVisitSection" style="display: none; margin-top: 1.5rem;">
+                                    <div class="next-visit-card">
+                                        <div class="next-visit-card-header"><i class="bi bi-calendar-check"></i> Next Visit Date (Friday Clinic)</div>
+                                        <div class="next-visit-card-body"><span class="next-visit-date-large" id="nextVisitDate">--</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                    <button type="submit" class="btn btn-success" id="saveBtn"><i class="bi bi-check-lg"></i> Save Follow-up</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="emptyState" class="empty-state">
+                            <i class="bi bi-clipboard2-pulse"></i>
+                            <p>Select a patient to record follow-up visit</p>
+                        </div>
+
+                        <!-- Success Card -->
+                        <div id="successCard" style="display: none;">
+                            <div class="success-result-card">
+                                <div class="success-result-icon"><i class="bi bi-check-circle-fill"></i></div>
+                                <h3>Follow-up Updated Successfully!</h3>
+                                <div class="success-result-details" id="successDetails"></div>
+                                <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
+                                    <button class="btn btn-primary" onclick="doAnotherFollowUp()"><i class="bi bi-clipboard2-pulse"></i> Another Follow-up</button>
+                                    <button class="btn btn-outline-secondary" onclick="window.location.href='dashboard.html'"><i class="bi bi-house"></i> Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p id="loadingMessage">Loading...</p>
+    </div>
+
+    <div class="toast-container">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="bi bi-check-circle text-success me-2" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/follow-up.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('toggleIcon');
+            sidebar.classList.toggle('collapsed');
+            icon.classList.toggle('bi-chevron-left');
+            icon.classList.toggle('bi-chevron-right');
+        }
+    </script>
+</body>
+</html>

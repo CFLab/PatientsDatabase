@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Patient - CF Patient Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo" style="background:none;"><img src="images/cf-logo.png" alt="CF" class="logo-3d" style="width:48px;height:48px;"></div>
+                <span class="sidebar-brand">CF Patient System</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item"><a href="dashboard.html" class="nav-link"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a></div>
+                <div class="nav-item"><a href="add-patient.html" class="nav-link"><i class="bi bi-person-plus"></i><span>Add New Patient</span></a></div>
+                <div class="nav-item"><a href="follow-up.html" class="nav-link"><i class="bi bi-clipboard2-pulse"></i><span>Patient Follow-up</span></a></div>
+                <div class="nav-item"><a href="edit-patient.html" class="nav-link active"><i class="bi bi-pencil-square"></i><span>Edit Patient</span></a></div>
+                <div class="nav-item" style="margin-top: auto;"><a href="#" class="nav-link" onclick="logout(); return false;"><i class="bi bi-box-arrow-left"></i><span>Logout</span></a></div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle" onclick="toggleSidebarCollapse()">
+                    <i class="bi bi-chevron-left" id="toggleIcon"></i><span>Collapse</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="navbar-left">
+                    <button class="mobile-menu-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                    <h1 class="navbar-title">Edit Patient Details</h1>
+                </div>
+                <div class="navbar-right">
+                    <div class="user-info">
+                        <div class="user-name" id="displayName">Administrator</div>
+                        <div class="user-role">Indus Hospital</div>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <button class="btn-logout" onclick="logout()"><i class="bi bi-box-arrow-right"></i><span>Logout</span></button>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <a href="dashboard.html" class="back-link"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <div class="form-header-icon" style="background: linear-gradient(135deg, #DC2626 0%, #F87171 100%);">
+                            <i class="bi bi-pencil-square"></i>
+                        </div>
+                        <h2>Edit Patient Details</h2>
+                    </div>
+
+                    <div class="form-body">
+                        <!-- Search -->
+                        <div class="search-section">
+                            <label for="patientSearch" class="form-label required">Search Patient</label>
+                            <div class="search-input-group">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="patientSearch" placeholder="Type MR Number or Patient Name...">
+                            </div>
+                            <div class="search-results" id="searchResults" style="display: none;"></div>
+                        </div>
+
+                        <!-- Edit Form -->
+                        <div id="editFormSection" style="display: none;">
+                            <form id="editPatientForm">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">MR Number</label>
+                                        <input type="text" class="form-control" id="mrNumber" readonly disabled>
+                                        <small class="text-muted">Cannot be changed</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="patientName" class="form-label required">Patient Name</label>
+                                        <input type="text" class="form-control" id="patientName" required>
+                                        <div class="invalid-feedback" id="patientNameError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="fatherName" class="form-label required">Father Name</label>
+                                        <input type="text" class="form-control" id="fatherName" required>
+                                        <div class="invalid-feedback" id="fatherNameError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="dateOfBirth" class="form-label required">Date of Birth</label>
+                                        <input type="date" class="form-control" id="dateOfBirth" required>
+                                        <div class="invalid-feedback" id="dateOfBirthError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Age (Auto)</label>
+                                        <div class="age-display" id="ageDisplay"><i class="bi bi-calendar3"></i><span>--</span></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="gender" class="form-label required">Gender</label>
+                                        <select class="form-select" id="gender" required>
+                                            <option value="">Select Gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <div class="invalid-feedback" id="genderError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="heightCm" class="form-label required">Height (cm)</label>
+                                        <input type="number" class="form-control" id="heightCm" step="0.1" min="0" max="300" required>
+                                        <div class="invalid-feedback" id="heightCmError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="weightKg" class="form-label required">Weight (kg)</label>
+                                        <input type="number" class="form-control" id="weightKg" step="0.1" min="0" max="500" required>
+                                        <div class="invalid-feedback" id="weightKgError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">BMI (Auto)</label>
+                                        <div class="bmi-display" id="bmiDisplay"><i class="bi bi-activity"></i><span class="bmi-value">--</span><span class="bmi-category"></span></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="mutation" class="form-label required">Mutation</label>
+                                        <input type="text" class="form-control" id="mutation" required>
+                                        <div class="invalid-feedback" id="mutationError"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sweatChloride" class="form-label required">Sweat Chloride</label>
+                                        <input type="number" class="form-control" id="sweatChloride" step="0.1" min="0" max="200" required>
+                                        <div class="invalid-feedback" id="sweatChlorideError"></div>
+                                    </div>
+                                </div>
+
+                                <div class="trikafta-section">
+                                    <div class="trikafta-toggle">
+                                        <label class="form-label mb-0">Trikafta?</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="trikaftaToggle">
+                                            <label class="form-check-label" for="trikaftaToggle" id="trikaftaLabel">No</label>
+                                        </div>
+                                    </div>
+                                    <div class="trikafta-options" id="trikaftaOptions" style="display: none;">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="trikaftaDuration" class="form-label required">Duration</label>
+                                                <select class="form-select" id="trikaftaDuration">
+                                                    <option value="">Select</option>
+                                                    <option value="28 Days">28 Days</option>
+                                                    <option value="56 Days">56 Days</option>
+                                                </select>
+                                                <div class="invalid-feedback" id="trikaftaDurationError"></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="trikaftaStrength" class="form-label required">Strength</label>
+                                                <select class="form-select" id="trikaftaStrength">
+                                                    <option value="">Select</option>
+                                                    <option value="75mg">75 mg</option>
+                                                    <option value="150mg">150 mg</option>
+                                                </select>
+                                                <div class="invalid-feedback" id="trikaftaStrengthError"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Cancel</button>
+                                    <button type="submit" class="btn btn-success" id="updateBtn"><i class="bi bi-check-lg"></i> Update Patient</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="emptyState" class="empty-state">
+                            <i class="bi bi-pencil-square"></i>
+                            <p>Select a patient to edit details</p>
+                        </div>
+
+                        <!-- Success Card -->
+                        <div id="successCard" style="display: none;">
+                            <div class="success-result-card">
+                                <div class="success-result-icon"><i class="bi bi-check-circle-fill"></i></div>
+                                <h3>Patient Updated Successfully!</h3>
+                                <div class="success-result-details" id="successDetails"></div>
+                                <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
+                                    <button class="btn btn-primary" onclick="editAnotherPatient()"><i class="bi bi-pencil-square"></i> Edit Another</button>
+                                    <button class="btn btn-outline-secondary" onclick="window.location.href='dashboard.html'"><i class="bi bi-house"></i> Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p id="loadingMessage">Loading...</p>
+    </div>
+
+    <div class="toast-container">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="bi bi-check-circle text-success me-2" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/edit-patient.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('toggleIcon');
+            sidebar.classList.toggle('collapsed');
+            icon.classList.toggle('bi-chevron-left');
+            icon.classList.toggle('bi-chevron-right');
+        }
+    </script>
+</body>
+</html>
