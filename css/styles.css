@@ -623,8 +623,8 @@ body {
 /* CF Logo — currently 250px × 250px
    Change the two values below to resize */
 .logo-cf {
-    width: 250px;           /* ← CF logo width */
-    height: 250px;          /* ← CF logo height */
+    width:  350px;           /* ← CF logo width */
+    height: 350px;          /* ← CF logo height */
     object-fit: contain;
     filter: drop-shadow(4px 6px 12px rgba(78, 26, 108, 0.35));
     transition: transform var(--transition-normal);
