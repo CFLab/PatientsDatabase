@@ -1,6 +1,10 @@
 /**
  * =============================================================================
- * FOLLOW-UP PAGE SCRIPT — FIXED SEARCH
+ * FOLLOW-UP PAGE SCRIPT
+ * =============================================================================
+ * - Editable: Height, Weight, Trikafta toggle, Duration, Strength
+ * - Auto: BMI, Age, Next Visit Date
+ * - Read-only: Everything else (name, DOB, mutation, etc.)
  * =============================================================================
  */
 
@@ -16,21 +20,15 @@ async function loadPatients() {
     showLoading('Loading patients...');
     try {
         var response = await apiGetAllPatients();
-        console.log('loadPatients response:', response);
-
         if (response.success && response.data) {
             allPatients = response.data;
             console.log('Loaded ' + allPatients.length + ' patients');
-            // Log first patient for debugging
-            if (allPatients.length > 0) {
-                console.log('Sample patient:', allPatients[0]);
-            }
         } else {
             showToast(response.error || 'Failed to load patients', 'error');
         }
     } catch (error) {
         console.error('Error loading patients:', error);
-        showToast('Failed to load patients. Check console for details.', 'error');
+        showToast('Failed to load patients', 'error');
     } finally {
         hideLoading();
     }
@@ -46,9 +44,8 @@ function setupEventListeners() {
     });
 
     searchInput.addEventListener('focus', function () {
-        // Show all patients on focus when input is empty
         if (this.value.trim().length === 0 && allPatients.length > 0) {
-            showSearchResults(allPatients.slice(0, 50)); // Show first 50
+            showSearchResults(allPatients.slice(0, 50));
         } else if (this.value.trim().length > 0) {
             showSearchResults(filterPatients(this.value.trim()));
         }
@@ -59,28 +56,43 @@ function setupEventListeners() {
     });
 
     document.getElementById('followUpForm').addEventListener('submit', handleSubmit);
+
+    // BMI recalc on height/weight change
     document.getElementById('heightCm').addEventListener('input', recalcBMI);
     document.getElementById('weightKg').addEventListener('input', recalcBMI);
     document.getElementById('heightCm').addEventListener('input', function () { clearFieldError('heightCm'); });
     document.getElementById('weightKg').addEventListener('input', function () { clearFieldError('weightKg'); });
+
+    // Trikafta toggle
+    document.getElementById('trikaftaToggle').addEventListener('change', function () {
+        var on = this.checked;
+        document.getElementById('trikaftaLabel').textContent = on ? 'Yes' : 'No';
+        document.getElementById('trikaftaOptions').style.display = on ? 'block' : 'none';
+
+        if (!on) {
+            document.getElementById('trikaftaDuration').value = '';
+            document.getElementById('trikaftaStrength').value = '';
+        }
+
+        updateNextVisitPreview();
+    });
+
+    // Duration change → recalculate next visit live
+    document.getElementById('trikaftaDuration').addEventListener('change', updateNextVisitPreview);
 }
 
-// ==================== SEARCH (FIXED) ====================
+// ==================== SEARCH ====================
 
 function filterPatients(query) {
     var q = String(query).toLowerCase().trim();
     return allPatients.filter(function (p) {
-        var mr   = String(p.mrNumber   || '').toLowerCase();
-        var name = String(p.patientName|| '').toLowerCase();
-        var father = String(p.fatherName || '').toLowerCase();
+        var mr     = String(p.mrNumber    || '').toLowerCase();
+        var name   = String(p.patientName || '').toLowerCase();
+        var father = String(p.fatherName  || '').toLowerCase();
         return mr.indexOf(q) > -1 || name.indexOf(q) > -1 || father.indexOf(q) > -1;
     });
 }
 
-/**
- * FIXED: Use data-index attribute instead of inline onclick with string escaping
- * This prevents bugs when MR Number contains quotes, spaces, or special chars
- */
 function showSearchResults(patients) {
     var div = document.getElementById('searchResults');
     if (patients.length === 0) {
@@ -102,11 +114,9 @@ function showSearchResults(patients) {
     div.innerHTML = html;
     div.style.display = 'block';
 
-    // Attach click handlers via delegation (much safer than inline onclick)
     div.querySelectorAll('.search-result-item[data-mr]').forEach(function (item) {
         item.addEventListener('click', function () {
-            var mr = decodeURIComponent(this.getAttribute('data-mr'));
-            selectPatient(mr);
+            selectPatient(decodeURIComponent(this.getAttribute('data-mr')));
         });
     });
 }
@@ -115,54 +125,60 @@ function hideSearchResults() {
     document.getElementById('searchResults').style.display = 'none';
 }
 
-// ==================== SELECT PATIENT (FIXED) ====================
+// ==================== SELECT PATIENT ====================
 
 function selectPatient(mrNumber) {
-    console.log('selectPatient called with:', mrNumber);
-
-    // FIXED: String comparison with trim on both sides
     var searchMR = String(mrNumber).trim().toLowerCase();
     selectedPatient = allPatients.find(function (p) {
         return String(p.mrNumber).trim().toLowerCase() === searchMR;
     });
 
     if (!selectedPatient) {
-        console.error('Patient NOT found for MR:', mrNumber);
-        console.log('Available MR numbers:', allPatients.map(function(p) { return p.mrNumber; }));
         showToast('Patient not found', 'error');
         return;
     }
-
-    console.log('Patient found:', selectedPatient);
 
     document.getElementById('patientSearch').value =
         selectedPatient.mrNumber + ' — ' + selectedPatient.patientName;
     hideSearchResults();
 
-    // Recalculate age from DOB
+    // Recalculate age
     selectedPatient.age = calculateAge(selectedPatient.dateOfBirth);
 
+    // Show read-only info
     displayPatientInfo();
 
-    document.getElementById('patientInfoSection').style.display = 'block';
-    document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('successCard').style.display = 'none';
-
+    // Populate editable fields
     document.getElementById('heightCm').value = selectedPatient.heightCm || '';
     document.getElementById('weightKg').value = selectedPatient.weightKg || '';
     recalcBMI();
 
-    // Next Visit preview
-    if (selectedPatient.trikafta === 'Yes' && selectedPatient.trikaftaDuration) {
-        var nextVisit = calculateNextVisitDate('Yes', selectedPatient.trikaftaDuration);
-        document.getElementById('nextVisitDate').textContent = formatDateDisplay(nextVisit);
-        document.getElementById('nextVisitSection').style.display = 'block';
+    // Populate Trikafta fields from patient data
+    var trikafta = selectedPatient.trikafta === 'Yes';
+    document.getElementById('trikaftaToggle').checked = trikafta;
+    document.getElementById('trikaftaLabel').textContent = trikafta ? 'Yes' : 'No';
+    document.getElementById('trikaftaOptions').style.display = trikafta ? 'block' : 'none';
+
+    if (trikafta) {
+        document.getElementById('trikaftaDuration').value = selectedPatient.trikaftaDuration || '';
+        document.getElementById('trikaftaStrength').value = selectedPatient.trikaftaStrength || '';
     } else {
-        document.getElementById('nextVisitSection').style.display = 'none';
+        document.getElementById('trikaftaDuration').value = '';
+        document.getElementById('trikaftaStrength').value = '';
     }
+
+    // Show next visit preview
+    updateNextVisitPreview();
+
+    // Show form, hide empty/success
+    document.getElementById('patientInfoSection').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('successCard').style.display = 'none';
 
     document.getElementById('heightCm').focus();
 }
+
+// ==================== PATIENT INFO DISPLAY ====================
 
 function displayPatientInfo() {
     var html = '';
@@ -174,14 +190,9 @@ function displayPatientInfo() {
     html += infoItem('Gender', selectedPatient.gender);
     html += infoItem('Mutation', selectedPatient.mutation);
     html += infoItem('Sweat Chloride', selectedPatient.sweatChloride + ' mmol/L');
-    html += infoItem('Trikafta', selectedPatient.trikafta, selectedPatient.trikafta === 'Yes' ? 'success' : '');
-    if (selectedPatient.trikafta === 'Yes') {
-        html += infoItem('Duration', selectedPatient.trikaftaDuration);
-        html += infoItem('Strength', selectedPatient.trikaftaStrength);
-    }
     html += infoItem('Last Visit', formatDateDisplay(selectedPatient.lastVisitDate));
     if (selectedPatient.nextVisitDate) {
-        html += infoItem('Next Visit', formatDateDisplay(selectedPatient.nextVisitDate), 'success');
+        html += infoItem('Prev Next Visit', formatDateDisplay(selectedPatient.nextVisitDate), 'success');
     }
     document.getElementById('patientInfoGrid').innerHTML = html;
 }
@@ -199,53 +210,92 @@ function recalcBMI() {
     updateBMIDisplay(calculateBMI(h, w));
 }
 
+/**
+ * Live recalculate and display next visit date whenever
+ * Trikafta toggle or Duration changes
+ */
+function updateNextVisitPreview() {
+    var trikafta = document.getElementById('trikaftaToggle').checked;
+    var duration = document.getElementById('trikaftaDuration').value;
+
+    if (trikafta && duration) {
+        var nextVisit = calculateNextVisitDate('Yes', duration);
+        document.getElementById('nextVisitDate').textContent = formatDateDisplay(nextVisit);
+        document.getElementById('nextVisitSection').style.display = 'block';
+    } else {
+        document.getElementById('nextVisitSection').style.display = 'none';
+        document.getElementById('nextVisitDate').textContent = '--';
+    }
+}
+
 // ==================== FORM SUBMISSION ====================
 
 async function handleSubmit(e) {
     e.preventDefault();
-    if (!selectedPatient) { showToast('Please select a patient first', 'error'); return; }
+    if (!selectedPatient) { showToast('Select a patient first', 'error'); return; }
     clearAllErrors();
 
+    // Validate height & weight
     var ok = true;
     var hErr = validateNumeric(document.getElementById('heightCm').value, 'Height', 0, 300);
     if (hErr) { showFieldError('heightCm', hErr); ok = false; }
     var wErr = validateNumeric(document.getElementById('weightKg').value, 'Weight', 0, 500);
     if (wErr) { showFieldError('weightKg', wErr); ok = false; }
+
+    // Validate Trikafta if toggled on
+    var trikaftaOn = document.getElementById('trikaftaToggle').checked;
+    if (trikaftaOn) {
+        if (!document.getElementById('trikaftaDuration').value) {
+            showFieldError('trikaftaDuration', 'Duration is required');
+            ok = false;
+        }
+        if (!document.getElementById('trikaftaStrength').value) {
+            showFieldError('trikaftaStrength', 'Strength is required');
+            ok = false;
+        }
+    }
+
     if (!ok) { showToast('Please fix the errors', 'error'); return; }
 
     showLoading('Saving follow-up...');
     document.getElementById('saveBtn').disabled = true;
 
     try {
-        var heightCm = parseFloat(document.getElementById('heightCm').value);
-        var weightKg = parseFloat(document.getElementById('weightKg').value);
-        var bmi = calculateBMI(heightCm, weightKg);
-        var age = calculateAge(selectedPatient.dateOfBirth);
-        var nextVisitDate = calculateNextVisitDate(selectedPatient.trikafta, selectedPatient.trikaftaDuration);
+        var heightCm     = parseFloat(document.getElementById('heightCm').value);
+        var weightKg     = parseFloat(document.getElementById('weightKg').value);
+        var bmi          = calculateBMI(heightCm, weightKg);
+        var age          = calculateAge(selectedPatient.dateOfBirth);
+        var trikafta     = trikaftaOn ? 'Yes' : 'No';
+        var duration     = trikaftaOn ? document.getElementById('trikaftaDuration').value : '';
+        var strength     = trikaftaOn ? document.getElementById('trikaftaStrength').value : '';
+        var nextVisitDate = calculateNextVisitDate(trikafta, duration);
 
         var updateData = {
-            mrNumber: String(selectedPatient.mrNumber).trim(),
-            heightCm: heightCm,
-            weightKg: weightKg,
-            bmi: bmi,
-            age: age,
-            lastVisitDate: getCurrentDate(),
-            nextVisitDate: nextVisitDate,
-            updatedDate: getCurrentDateTime(),
-            updatedBy: getCurrentUsername()
+            mrNumber:         String(selectedPatient.mrNumber).trim(),
+            heightCm:         heightCm,
+            weightKg:         weightKg,
+            bmi:              bmi,
+            age:              age,
+            trikafta:         trikafta,
+            trikaftaDuration: duration,
+            trikaftaStrength: strength,
+            lastVisitDate:    getCurrentDate(),
+            nextVisitDate:    nextVisitDate,
+            updatedDate:      getCurrentDateTime(),
+            updatedBy:        getCurrentUsername()
         };
 
-        console.log('Sending updateFollowUp:', updateData);
+        console.log('Sending follow-up update:', updateData);
         var response = await apiUpdateFollowUp(updateData);
         console.log('Response:', response);
         hideLoading();
 
         if (response.success) {
             showToast('✅ Follow-up Updated Successfully', 'success');
-            showSuccessCard(updateData);
+            showSuccessCard(updateData, trikafta, duration, strength);
             loadPatients();
         } else {
-            showToast(response.error || 'Failed to update follow-up', 'error');
+            showToast(response.error || 'Failed to update', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -258,7 +308,7 @@ async function handleSubmit(e) {
 
 // ==================== SUCCESS CARD ====================
 
-function showSuccessCard(data) {
+function showSuccessCard(data, trikafta, duration, strength) {
     document.getElementById('patientInfoSection').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('successCard').style.display = 'block';
@@ -270,12 +320,14 @@ function showSuccessCard(data) {
     html += detailItem('Height', data.heightCm + ' cm');
     html += detailItem('Weight', data.weightKg + ' kg');
     html += detailItem('BMI', data.bmi);
-    html += detailItem('Last Visit', formatDateDisplay(data.lastVisitDate));
+    html += detailItem('Trikafta', trikafta);
 
-    if (selectedPatient.trikafta === 'Yes') {
-        html += detailItem('Trikafta Duration', selectedPatient.trikaftaDuration);
-        html += detailItem('Trikafta Strength', selectedPatient.trikaftaStrength);
+    if (trikafta === 'Yes') {
+        html += detailItem('Duration', duration);
+        html += detailItem('Strength', strength);
     }
+
+    html += detailItem('Last Visit', formatDateDisplay(data.lastVisitDate));
 
     if (data.nextVisitDate) {
         html += '<div class="success-detail-item full-width">'
@@ -304,6 +356,11 @@ function doAnotherFollowUp() {
     document.getElementById('patientSearch').value = '';
     document.getElementById('heightCm').value = '';
     document.getElementById('weightKg').value = '';
+    document.getElementById('trikaftaToggle').checked = false;
+    document.getElementById('trikaftaLabel').textContent = 'No';
+    document.getElementById('trikaftaOptions').style.display = 'none';
+    document.getElementById('trikaftaDuration').value = '';
+    document.getElementById('trikaftaStrength').value = '';
     document.getElementById('patientInfoSection').style.display = 'none';
     document.getElementById('successCard').style.display = 'none';
     document.getElementById('emptyState').style.display = 'block';
