@@ -8,7 +8,7 @@
 
 // ==================== HARDCODED API URL ====================
 // UPDATE THIS with your Google Apps Script deployment URL
-const API_URL = 'https://script.google.com/macros/s/AKfycbx-ANr60oTZdMcTydbE-ONuhmy6k2ggo7e0e2_YMr2IgLh7AGQuvhhC-fCEqcdUbw-b/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxdmTUq9P8oaHHpxJMnNafiLJtN1i5dAlB1OfHbIVOzHwbNVhS_sFJGICJQojTLU3b4/exec';
 
 // ==================== STORAGE KEYS ====================
 const STORAGE_KEYS = {
