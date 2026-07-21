@@ -94,6 +94,40 @@
                                     </div>
                                 </div>
 
+                                <!-- Editable Trikafta Section -->
+                                <div class="trikafta-section" style="margin-top: 1.5rem;">
+                                    <div class="trikafta-toggle">
+                                        <label class="form-label mb-0">Is patient currently on Trikafta?</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="trikaftaToggle">
+                                            <label class="form-check-label" for="trikaftaToggle" id="trikaftaLabel">No</label>
+                                        </div>
+                                    </div>
+                                    <div class="trikafta-options" id="trikaftaOptions" style="display: none;">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="trikaftaDuration" class="form-label required">Duration</label>
+                                                <select class="form-select" id="trikaftaDuration">
+                                                    <option value="">Select Duration</option>
+                                                    <option value="28 Days">28 Days</option>
+                                                    <option value="56 Days">56 Days</option>
+                                                </select>
+                                                <div class="invalid-feedback" id="trikaftaDurationError"></div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="trikaftaStrength" class="form-label required">Strength</label>
+                                                <select class="form-select" id="trikaftaStrength">
+                                                    <option value="">Select Strength</option>
+                                                    <option value="75mg">75 mg</option>
+                                                    <option value="150mg">150 mg</option>
+                                                </select>
+                                                <div class="invalid-feedback" id="trikaftaStrengthError"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Next Visit Preview -->
                                 <div id="nextVisitSection" style="display: none; margin-top: 1.5rem;">
                                     <div class="next-visit-card">
                                         <div class="next-visit-card-header"><i class="bi bi-calendar-check"></i> Next Visit Date (Friday Clinic)</div>
